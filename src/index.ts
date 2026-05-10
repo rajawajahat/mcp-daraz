@@ -10,6 +10,9 @@ import { registerShipmentTools } from "./tools/shipment.js";
 import { registerFinanceTools } from "./tools/finance.js";
 import { registerImageTools } from "./tools/images.js";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { version } = require("../package.json") as { version: string };
+
 const appKey = process.env.DARAZ_APP_KEY;
 const appSecret = process.env.DARAZ_APP_SECRET;
 const accessToken = process.env.DARAZ_ACCESS_TOKEN;
@@ -18,8 +21,8 @@ const sandbox = process.env.DARAZ_SANDBOX !== "false";
 
 if (!appKey || !appSecret || !accessToken) {
   console.error(
-    "❌ Missing required environment variables: DARAZ_APP_KEY, DARAZ_APP_SECRET, DARAZ_ACCESS_TOKEN\n" +
-      "   Get them from: Daraz Seller Center → Store → API Test Tool"
+    "Missing required environment variables: DARAZ_APP_KEY, DARAZ_APP_SECRET, DARAZ_ACCESS_TOKEN\n" +
+      "  Get them from: Daraz Seller Center -> Store -> API Test Tool"
   );
   process.exit(1);
 }
@@ -27,10 +30,10 @@ if (!appKey || !appSecret || !accessToken) {
 const baseUrl = getBaseUrl(country);
 
 console.error(`
-✅  mcp-daraz v0.1.0
-    Country  : ${country} → ${baseUrl}
-    Mode     : ${sandbox ? "SANDBOX" : "PRODUCTION"}
-    Tools    : 28 tools across 5 categories
+mcp-daraz v${version}
+  Country : ${country} -> ${baseUrl}
+  Mode    : ${sandbox ? "SANDBOX" : "PRODUCTION"}
+  Tools   : 28 tools across 5 categories
 `);
 
 const client = new DarazClient({
@@ -43,7 +46,7 @@ const client = new DarazClient({
 
 const server = new McpServer({
   name: "mcp-daraz",
-  version: "0.1.0",
+  version,
 });
 
 registerProductTools(server, client);
@@ -53,14 +56,13 @@ registerFinanceTools(server, client);
 registerImageTools(server, client);
 
 async function main(): Promise<void> {
-  // Validate credentials silently
   try {
     await client.get("sellercenter.seller.get", {
       method: "sellercenter.seller.get",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`⚠️  Credential check failed: ${message}`);
+    console.error(`Credential check failed: ${message}`);
   }
 
   const transport = new StdioServerTransport();

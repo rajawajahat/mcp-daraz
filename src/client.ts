@@ -3,11 +3,18 @@ import { generateSign } from "./utils/sign.js";
 import { generateTimestamp, getBaseUrl } from "./utils/helpers.js";
 import { DarazAPIError } from "./utils/errors.js";
 
+const RATE_LIMIT_DELAY_MS = 1000;
+
 interface DarazClientConfig {
   appKey: string;
   appSecret: string;
   accessToken: string;
   country: string;
+  /**
+   * Informational only. Daraz uses the same API endpoints for both sandbox and
+   * production — the mode is determined by the app credentials registered in
+   * Seller Center, not by a separate base URL.
+   */
   sandbox: boolean;
 }
 
@@ -72,17 +79,34 @@ export class DarazClient {
   ): Promise<Record<string, unknown>> {
     const { url, queryParams } = this.buildRequest(apiMethod, params);
 
-    const response = await this.http.request({
-      method: httpMethod,
-      url,
-      params: queryParams,
-      data: body,
-    });
+    let response;
+    try {
+      response = await this.http.request({
+        method: httpMethod,
+        url,
+        params: queryParams,
+        data: body,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        throw new Error(
+          `Network error: ${error.message}${status !== undefined ? ` (HTTP ${status})` : ""}`,
+          { cause: error }
+        );
+      }
+      throw error;
+    }
 
     const data = response.data as Record<string, unknown>;
     const code = String(data.code ?? "0");
 
     if (code === "27" && !isRetry) {
+      return this.request(httpMethod, apiMethod, params, body, true);
+    }
+
+    if (code === "21" && !isRetry) {
+      await new Promise<void>((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
       return this.request(httpMethod, apiMethod, params, body, true);
     }
 

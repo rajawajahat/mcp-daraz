@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { DarazClient } from "../client.js";
+import { wrapTool } from "../utils/tool-response.js";
 
 export function registerImageTools(server: McpServer, client: DarazClient): void {
   server.tool(
@@ -10,10 +11,13 @@ export function registerImageTools(server: McpServer, client: DarazClient): void
       image_url: z.string().describe("Publicly accessible image URL"),
     },
     async (params) => {
-      const result = await client.post("sellercenter.image.upload", {
-        method: "sellercenter.image.upload",
-      }, { Image: { Url: params.image_url } });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.post(
+          "sellercenter.image.upload",
+          { method: "sellercenter.image.upload" },
+          { Image: { Url: params.image_url } }
+        )
+      );
     }
   );
 
@@ -24,10 +28,13 @@ export function registerImageTools(server: McpServer, client: DarazClient): void
       url: z.string().describe("External image URL to migrate"),
     },
     async (params) => {
-      const result = await client.post("sellercenter.image.migrate", {
-        method: "sellercenter.image.migrate",
-      }, { Request: { Image: { Url: params.url } } });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.post(
+          "sellercenter.image.migrate",
+          { method: "sellercenter.image.migrate" },
+          { Request: { Image: { Url: params.url } } }
+        )
+      );
     }
   );
 
@@ -38,16 +45,13 @@ export function registerImageTools(server: McpServer, client: DarazClient): void
       urls: z.array(z.string()).min(1).max(10).describe("Array of external image URLs (max 10)"),
     },
     async (params) => {
-      const result = await client.post("sellercenter.images.migrate", {
-        method: "sellercenter.images.migrate",
-      }, {
-        Request: {
-          Images: {
-            Image: params.urls.map((url) => ({ Url: url })),
-          },
-        },
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.post(
+          "sellercenter.images.migrate",
+          { method: "sellercenter.images.migrate" },
+          { Request: { Images: { Image: params.urls.map((url) => ({ Url: url })) } } }
+        )
+      );
     }
   );
 
@@ -59,25 +63,21 @@ export function registerImageTools(server: McpServer, client: DarazClient): void
       images: z.array(z.string()).min(1).max(8).describe("Array of Daraz CDN image URLs (max 8)"),
     },
     async (params) => {
-      const result = await client.post("sellercenter.product.image.set", {
-        method: "sellercenter.product.image.set",
-      }, {
-        Request: {
-          Product: {
-            Skus: {
-              Sku: [
-                {
-                  SellerSku: params.seller_sku,
-                  Images: {
-                    Image: params.images,
-                  },
+      return wrapTool(() =>
+        client.post(
+          "sellercenter.product.image.set",
+          { method: "sellercenter.product.image.set" },
+          {
+            Request: {
+              Product: {
+                Skus: {
+                  Sku: [{ SellerSku: params.seller_sku, Images: { Image: params.images } }],
                 },
-              ],
+              },
             },
-          },
-        },
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+          }
+        )
+      );
     }
   );
 
@@ -88,11 +88,12 @@ export function registerImageTools(server: McpServer, client: DarazClient): void
       seller_skus: z.array(z.string()).min(1).describe("Array of seller SKU codes"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.product.qc_status.get", {
-        method: "sellercenter.product.qc_status.get",
-        seller_skus: JSON.stringify(params.seller_skus),
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.product.qc_status.get", {
+          method: "sellercenter.product.qc_status.get",
+          seller_skus: JSON.stringify(params.seller_skus),
+        })
+      );
     }
   );
 }

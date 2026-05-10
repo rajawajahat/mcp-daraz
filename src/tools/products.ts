@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { DarazClient } from "../client.js";
+import { wrapTool } from "../utils/tool-response.js";
 
 export function registerProductTools(server: McpServer, client: DarazClient): void {
   server.tool(
@@ -22,22 +23,22 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
       create_after: z.string().optional().describe("Filter by creation date (ISO date)"),
     },
     async (params) => {
-      const apiParams: Record<string, string> = {
-        method: "sellercenter.product.list",
-        offset: String(params.offset),
-        limit: String(params.limit),
-      };
-      if (params.filter) apiParams.filter = params.filter;
-      if (params.search) apiParams.search = params.search;
-      if (params.sort_by) apiParams.sort_by = params.sort_by;
-      if (params.sort_direction) apiParams.sort_direction = params.sort_direction;
-      if (params.update_before) apiParams.update_before = params.update_before;
-      if (params.update_after) apiParams.update_after = params.update_after;
-      if (params.create_before) apiParams.create_before = params.create_before;
-      if (params.create_after) apiParams.create_after = params.create_after;
-
-      const result = await client.get("sellercenter.product.list", apiParams);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(async () => {
+        const apiParams: Record<string, string> = {
+          method: "sellercenter.product.list",
+          offset: String(params.offset),
+          limit: String(params.limit),
+        };
+        if (params.filter) apiParams.filter = params.filter;
+        if (params.search) apiParams.search = params.search;
+        if (params.sort_by) apiParams.sort_by = params.sort_by;
+        if (params.sort_direction) apiParams.sort_direction = params.sort_direction;
+        if (params.update_before) apiParams.update_before = params.update_before;
+        if (params.update_after) apiParams.update_after = params.update_after;
+        if (params.create_before) apiParams.create_before = params.create_before;
+        if (params.create_after) apiParams.create_after = params.create_after;
+        return client.get("sellercenter.product.list", apiParams);
+      });
     }
   );
 
@@ -48,11 +49,12 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
       item_id: z.string().describe("Daraz product item ID"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.product.get", {
-        method: "sellercenter.product.get",
-        item_id: params.item_id,
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.product.get", {
+          method: "sellercenter.product.get",
+          item_id: params.item_id,
+        })
+      );
     }
   );
 
@@ -76,40 +78,37 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
       size: z.string().optional().describe("Size"),
     },
     async (params) => {
-      const payload = {
-        Request: {
-          Product: {
-            PrimaryCategory: params.primary_category,
-            Attributes: {
-              name: params.name,
-              description: params.description,
-              brand: params.brand,
-              ...(params.color_family && { color_family: params.color_family }),
-              ...(params.size && { size: params.size }),
-            },
-            Skus: {
-              Sku: [
-                {
-                  SellerSku: params.seller_sku,
-                  price: params.price,
-                  quantity: params.quantity,
-                  package_weight: params.package_weight,
-                  package_length: params.package_length,
-                  package_width: params.package_width,
-                  package_height: params.package_height,
-                  Images: {
-                    Image: params.images,
+      return wrapTool(() => {
+        const payload = {
+          Request: {
+            Product: {
+              PrimaryCategory: params.primary_category,
+              Attributes: {
+                name: params.name,
+                description: params.description,
+                brand: params.brand,
+                ...(params.color_family && { color_family: params.color_family }),
+                ...(params.size && { size: params.size }),
+              },
+              Skus: {
+                Sku: [
+                  {
+                    SellerSku: params.seller_sku,
+                    price: params.price,
+                    quantity: params.quantity,
+                    package_weight: params.package_weight,
+                    package_length: params.package_length,
+                    package_width: params.package_width,
+                    package_height: params.package_height,
+                    Images: { Image: params.images },
                   },
-                },
-              ],
+                ],
+              },
             },
           },
-        },
-      };
-      const result = await client.post("sellercenter.product.create", {
-        method: "sellercenter.product.create",
-      }, payload);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        };
+        return client.post("sellercenter.product.create", { method: "sellercenter.product.create" }, payload);
+      });
     }
   );
 
@@ -123,25 +122,22 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
       images: z.array(z.string()).max(8).optional().describe("New image URLs"),
     },
     async (params) => {
-      const attributes: Record<string, unknown> = {};
-      if (params.name) attributes.name = params.name;
-      if (params.description) attributes.description = params.description;
+      return wrapTool(() => {
+        const attributes: Record<string, unknown> = {};
+        if (params.name) attributes.name = params.name;
+        if (params.description) attributes.description = params.description;
 
-      const payload: Record<string, unknown> = {
-        Request: {
-          Product: {
-            ItemId: params.item_id,
-            Attributes: attributes,
-            ...(params.images && {
-              Images: { Image: params.images },
-            }),
+        const payload: Record<string, unknown> = {
+          Request: {
+            Product: {
+              ItemId: params.item_id,
+              Attributes: attributes,
+              ...(params.images && { Images: { Image: params.images } }),
+            },
           },
-        },
-      };
-      const result = await client.post("sellercenter.product.update", {
-        method: "sellercenter.product.update",
-      }, payload);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        };
+        return client.post("sellercenter.product.update", { method: "sellercenter.product.update" }, payload);
+      });
     }
   );
 
@@ -162,23 +158,26 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
         .describe("Array of SKUs to update"),
     },
     async (params) => {
-      const payload = {
-        Request: {
-          Product: {
-            Skus: {
-              Sku: params.skus.map((sku) => ({
-                SellerSku: sku.seller_sku,
-                Price: sku.price,
-                Quantity: sku.quantity,
-              })),
+      return wrapTool(() => {
+        const payload = {
+          Request: {
+            Product: {
+              Skus: {
+                Sku: params.skus.map((sku) => ({
+                  SellerSku: sku.seller_sku,
+                  Price: sku.price,
+                  Quantity: sku.quantity,
+                })),
+              },
             },
           },
-        },
-      };
-      const result = await client.post("sellercenter.product.price_quantity.update", {
-        method: "sellercenter.product.price_quantity.update",
-      }, payload);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        };
+        return client.post(
+          "sellercenter.product.price_quantity.update",
+          { method: "sellercenter.product.price_quantity.update" },
+          payload
+        );
+      });
     }
   );
 
@@ -187,10 +186,11 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
     "Get the full product category tree for your Daraz country",
     {},
     async () => {
-      const result = await client.get("sellercenter.category.tree.get", {
-        method: "sellercenter.category.tree.get",
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.category.tree.get", {
+          method: "sellercenter.category.tree.get",
+        })
+      );
     }
   );
 
@@ -201,11 +201,12 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
       primary_category_id: z.string().describe("Category ID to get attributes for"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.category.attributes.get", {
-        method: "sellercenter.category.attributes.get",
-        primary_category_id: params.primary_category_id,
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.category.attributes.get", {
+          method: "sellercenter.category.attributes.get",
+          primary_category_id: params.primary_category_id,
+        })
+      );
     }
   );
 
@@ -218,15 +219,15 @@ export function registerProductTools(server: McpServer, client: DarazClient): vo
       search: z.string().optional().describe("Search brands by name"),
     },
     async (params) => {
-      const apiParams: Record<string, string> = {
-        method: "sellercenter.brand.get",
-        offset: String(params.offset),
-        limit: String(params.limit),
-      };
-      if (params.search) apiParams.search = params.search;
-
-      const result = await client.get("sellercenter.brand.get", apiParams);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(async () => {
+        const apiParams: Record<string, string> = {
+          method: "sellercenter.brand.get",
+          offset: String(params.offset),
+          limit: String(params.limit),
+        };
+        if (params.search) apiParams.search = params.search;
+        return client.get("sellercenter.brand.get", apiParams);
+      });
     }
   );
 }

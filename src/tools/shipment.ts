@@ -2,6 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { DarazClient } from "../client.js";
 import { formatOrderIds } from "../utils/helpers.js";
+import { wrapTool } from "../utils/tool-response.js";
 
 export function registerShipmentTools(server: McpServer, client: DarazClient): void {
   server.tool(
@@ -9,10 +10,11 @@ export function registerShipmentTools(server: McpServer, client: DarazClient): v
     "List all available shipment/courier providers for your store",
     {},
     async () => {
-      const result = await client.get("sellercenter.logistics.shipper.list", {
-        method: "sellercenter.logistics.shipper.list",
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.logistics.shipper.list", {
+          method: "sellercenter.logistics.shipper.list",
+        })
+      );
     }
   );
 
@@ -26,12 +28,13 @@ export function registerShipmentTools(server: McpServer, client: DarazClient): v
       order_item_ids: z.array(z.string()).min(1).describe("Array of order item IDs"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.order.document.get", {
-        method: "sellercenter.order.document.get",
-        doc_type: params.doc_type,
-        order_item_ids: formatOrderIds(params.order_item_ids),
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.order.document.get", {
+          method: "sellercenter.order.document.get",
+          doc_type: params.doc_type,
+          order_item_ids: formatOrderIds(params.order_item_ids),
+        })
+      );
     }
   );
 
@@ -43,12 +46,13 @@ export function registerShipmentTools(server: McpServer, client: DarazClient): v
       invoice_number: z.string().describe("Custom invoice number"),
     },
     async (params) => {
-      const result = await client.post("sellercenter.order.invoice_number.set", {
-        method: "sellercenter.order.invoice_number.set",
-        order_item_id: params.order_item_id,
-        invoice_number: params.invoice_number,
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.post("sellercenter.order.invoice_number.set", {
+          method: "sellercenter.order.invoice_number.set",
+          order_item_id: params.order_item_id,
+          invoice_number: params.invoice_number,
+        })
+      );
     }
   );
 
@@ -59,11 +63,12 @@ export function registerShipmentTools(server: McpServer, client: DarazClient): v
       order_item_id: z.string().describe("Order item ID to track"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.order.tracking.get", {
-        method: "sellercenter.order.tracking.get",
-        order_item_id: params.order_item_id,
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.order.tracking.get", {
+          method: "sellercenter.order.tracking.get",
+          order_item_id: params.order_item_id,
+        })
+      );
     }
   );
 }

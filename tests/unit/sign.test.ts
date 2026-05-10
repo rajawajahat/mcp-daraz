@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { describe, it, expect } from "vitest";
 import { generateSign } from "../../src/utils/sign";
 
@@ -55,7 +56,6 @@ describe("generateSign", () => {
     // With params { app_key: "123", timestamp: "1620000000000", method: "sellercenter.seller.get" }
     // Sorted: app_key, method, timestamp
     // String: "/restapp_key123methodsellercenter.seller.gettimestamp1620000000000"
-    const { createHmac } = require("crypto");
     const fullString =
       "/restapp_key123methodsellercenter.seller.gettimestamp1620000000000";
     const expected = createHmac("sha256", appSecret)

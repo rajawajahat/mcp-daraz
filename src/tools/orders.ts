@@ -2,6 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { DarazClient } from "../client.js";
 import { formatOrderIds } from "../utils/helpers.js";
+import { wrapTool } from "../utils/tool-response.js";
 
 export function registerOrderTools(server: McpServer, client: DarazClient): void {
   server.tool(
@@ -22,21 +23,21 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
       update_after: z.string().optional().describe("Filter by update date"),
     },
     async (params) => {
-      const apiParams: Record<string, string> = {
-        method: "sellercenter.order.list",
-        created_after: params.created_after,
-        offset: String(params.offset),
-        limit: String(params.limit),
-      };
-      if (params.created_before) apiParams.created_before = params.created_before;
-      if (params.status) apiParams.status = params.status;
-      if (params.sort_by) apiParams.sort_by = params.sort_by;
-      if (params.sort_direction) apiParams.sort_direction = params.sort_direction;
-      if (params.update_before) apiParams.update_before = params.update_before;
-      if (params.update_after) apiParams.update_after = params.update_after;
-
-      const result = await client.get("sellercenter.order.list", apiParams);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(async () => {
+        const apiParams: Record<string, string> = {
+          method: "sellercenter.order.list",
+          created_after: params.created_after,
+          offset: String(params.offset),
+          limit: String(params.limit),
+        };
+        if (params.created_before) apiParams.created_before = params.created_before;
+        if (params.status) apiParams.status = params.status;
+        if (params.sort_by) apiParams.sort_by = params.sort_by;
+        if (params.sort_direction) apiParams.sort_direction = params.sort_direction;
+        if (params.update_before) apiParams.update_before = params.update_before;
+        if (params.update_after) apiParams.update_after = params.update_after;
+        return client.get("sellercenter.order.list", apiParams);
+      });
     }
   );
 
@@ -47,11 +48,12 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
       order_id: z.string().describe("Daraz order ID"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.order.get", {
-        method: "sellercenter.order.get",
-        order_id: params.order_id,
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.order.get", {
+          method: "sellercenter.order.get",
+          order_id: params.order_id,
+        })
+      );
     }
   );
 
@@ -62,11 +64,12 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
       order_ids: z.array(z.string()).min(1).describe("Array of order IDs"),
     },
     async (params) => {
-      const result = await client.get("sellercenter.order.items.get", {
-        method: "sellercenter.order.items.get",
-        order_id_list: formatOrderIds(params.order_ids),
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.order.items.get", {
+          method: "sellercenter.order.items.get",
+          order_id_list: formatOrderIds(params.order_ids),
+        })
+      );
     }
   );
 
@@ -79,21 +82,20 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
       tracking_number: z.string().describe("Tracking number from courier"),
     },
     async (params) => {
-      const payload = {
-        Request: {
-          OrderItems: {
-            OrderItem: params.order_item_ids.map((id) => ({
-              OrderItemId: id,
-              ShippingProvider: params.shipping_provider,
-              TrackingNumber: params.tracking_number,
-            })),
+      return wrapTool(() => {
+        const payload = {
+          Request: {
+            OrderItems: {
+              OrderItem: params.order_item_ids.map((id) => ({
+                OrderItemId: id,
+                ShippingProvider: params.shipping_provider,
+                TrackingNumber: params.tracking_number,
+              })),
+            },
           },
-        },
-      };
-      const result = await client.post("sellercenter.order.pack", {
-        method: "sellercenter.order.pack",
-      }, payload);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        };
+        return client.post("sellercenter.order.pack", { method: "sellercenter.order.pack" }, payload);
+      });
     }
   );
 
@@ -107,22 +109,21 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
       serial_number: z.string().optional().describe("Optional serial number"),
     },
     async (params) => {
-      const payload = {
-        Request: {
-          OrderItems: {
-            OrderItem: params.order_item_ids.map((id) => ({
-              OrderItemId: id,
-              ShippingProvider: params.shipping_provider,
-              TrackingNumber: params.tracking_number,
-              ...(params.serial_number && { SerialNumber: params.serial_number }),
-            })),
+      return wrapTool(() => {
+        const payload = {
+          Request: {
+            OrderItems: {
+              OrderItem: params.order_item_ids.map((id) => ({
+                OrderItemId: id,
+                ShippingProvider: params.shipping_provider,
+                TrackingNumber: params.tracking_number,
+                ...(params.serial_number && { SerialNumber: params.serial_number }),
+              })),
+            },
           },
-        },
-      };
-      const result = await client.post("sellercenter.order.rts", {
-        method: "sellercenter.order.rts",
-      }, payload);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        };
+        return client.post("sellercenter.order.rts", { method: "sellercenter.order.rts" }, payload);
+      });
     }
   );
 
@@ -135,15 +136,15 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
       reason_detail: z.string().optional().describe("Additional cancellation detail"),
     },
     async (params) => {
-      const apiParams: Record<string, string> = {
-        method: "sellercenter.order.cancel",
-        order_item_id: params.order_item_id,
-        reason_id: params.reason_id,
-      };
-      if (params.reason_detail) apiParams.reason_detail = params.reason_detail;
-
-      const result = await client.post("sellercenter.order.cancel", apiParams);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(async () => {
+        const apiParams: Record<string, string> = {
+          method: "sellercenter.order.cancel",
+          order_item_id: params.order_item_id,
+          reason_id: params.reason_id,
+        };
+        if (params.reason_detail) apiParams.reason_detail = params.reason_detail;
+        return client.post("sellercenter.order.cancel", apiParams);
+      });
     }
   );
 
@@ -152,10 +153,11 @@ export function registerOrderTools(server: McpServer, client: DarazClient): void
     "Get valid cancellation reason codes for cancelling orders",
     {},
     async () => {
-      const result = await client.get("sellercenter.order.failure_reason.get", {
-        method: "sellercenter.order.failure_reason.get",
-      });
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return wrapTool(() =>
+        client.get("sellercenter.order.failure_reason.get", {
+          method: "sellercenter.order.failure_reason.get",
+        })
+      );
     }
   );
 }

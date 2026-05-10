@@ -9,7 +9,7 @@
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that connects AI agents to the Daraz Seller API. Manage your entire store — products, orders, shipments, and payouts — from Claude Desktop, Cursor, Cline, or any MCP-compatible agent using plain English.
 
-> Sandbox mode by default. Bring your own seller credentials. No secrets bundled.
+> Your credentials, your store. Sandbox enabled by default.
 
 ---
 
