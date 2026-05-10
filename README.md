@@ -1,11 +1,10 @@
-# mcp-daraz 🛍️
+# mcp-daraz
 
-[npm](https://www.npmjs.com/package/mcp-daraz)
-[License: MIT](LICENSE)
-[Node ≥18](https://nodejs.org)
-[Model Context Protocol](https://modelcontextprotocol.io)
-[status: alpha]()
-[countries]()
+[![npm](https://img.shields.io/npm/v/mcp-daraz)](https://www.npmjs.com/package/mcp-daraz)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io)
+[![status: alpha](https://img.shields.io/badge/status-alpha-orange)]()
 
 An open-source [Model Context Protocol](https://modelcontextprotocol.io) server for **Daraz** — South & Southeast Asia's largest e-commerce platform. Plug it into Claude Desktop, Cursor, Cline, or any MCP-aware agent and let it manage your entire store: list orders, update inventory, mark shipments, download labels, and check payouts — all through the Daraz Seller API.
 
@@ -42,7 +41,7 @@ This MCP gives any agent a stable, typed interface to Daraz so you never have to
 
 28 tools across 5 categories.
 
-### 📦 Products
+### Products
 
 
 | Tool                      | Purpose                                                      |
@@ -57,7 +56,7 @@ This MCP gives any agent a stable, typed interface to Daraz so you never have to
 | `get_brands`              | Search available brands by name                              |
 
 
-### 🛒 Orders
+### Orders
 
 
 | Tool                          | Purpose                                                         |
@@ -71,7 +70,7 @@ This MCP gives any agent a stable, typed interface to Daraz so you never have to
 | `get_failure_reasons`         | Retrieve valid cancellation reason codes                        |
 
 
-### 🚚 Shipment
+### Shipment
 
 
 | Tool                     | Purpose                                                             |
@@ -82,7 +81,7 @@ This MCP gives any agent a stable, typed interface to Daraz so you never have to
 | `get_tracking_info`      | Live tracking status for a shipment                                 |
 
 
-### 💰 Finance
+### Finance
 
 
 | Tool                      | Purpose                                          |
@@ -93,7 +92,7 @@ This MCP gives any agent a stable, typed interface to Daraz so you never have to
 | `get_transaction_types`   | All transaction type codes for use as filters    |
 
 
-### 🖼️ Images & QC
+### Images & QC
 
 
 | Tool             | Purpose                                            |
@@ -239,13 +238,13 @@ Example prompts that work out of the box:
 The same credentials work across all Daraz markets. Change `DARAZ_COUNTRY` to switch:
 
 
-| Country         | Code | API Base URL       |
-| --------------- | ---- | ------------------ |
-| 🇵🇰 Pakistan   | `PK` | `api.daraz.pk`     |
-| 🇧🇩 Bangladesh | `BD` | `api.daraz.com.bd` |
-| 🇱🇰 Sri Lanka  | `LK` | `api.daraz.lk`     |
-| 🇳🇵 Nepal      | `NP` | `api.daraz.com.np` |
-| 🇲🇲 Myanmar    | `MM` | `api.daraz.com.mm` |
+| Country    | Code | API Base URL       |
+| ---------- | ---- | ------------------ |
+| Pakistan   | `PK` | `api.daraz.pk`     |
+| Bangladesh | `BD` | `api.daraz.com.bd` |
+| Sri Lanka  | `LK` | `api.daraz.lk`     |
+| Nepal      | `NP` | `api.daraz.com.np` |
+| Myanmar    | `MM` | `api.daraz.com.mm` |
 
 
 No code changes required — the server resolves the correct endpoint from `DARAZ_COUNTRY` at startup.
