@@ -1,6 +1,6 @@
 {
   "name": "mcp-daraz",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "The first MCP server for Daraz — manage your store from your AI agent across Pakistan, Bangladesh, Sri Lanka, Nepal & Myanmar",
   "main": "dist/index.js",
   "bin": {
