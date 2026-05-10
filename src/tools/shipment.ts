@@ -1,0 +1,69 @@
+import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { DarazClient } from "../client.js";
+import { formatOrderIds } from "../utils/helpers.js";
+
+export function registerShipmentTools(server: McpServer, client: DarazClient): void {
+  server.tool(
+    "get_shipment_providers",
+    "List all available shipment/courier providers for your store",
+    {},
+    async () => {
+      const result = await client.get("sellercenter.logistics.shipper.list", {
+        method: "sellercenter.logistics.shipper.list",
+      });
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    "get_document",
+    "Download shipping label, invoice, or carrier manifest for orders",
+    {
+      doc_type: z
+        .enum(["invoice", "shippingLabel", "carrierManifest", "paymentList"])
+        .describe("Type of document to download"),
+      order_item_ids: z.array(z.string()).min(1).describe("Array of order item IDs"),
+    },
+    async (params) => {
+      const result = await client.get("sellercenter.order.document.get", {
+        method: "sellercenter.order.document.get",
+        doc_type: params.doc_type,
+        order_item_ids: formatOrderIds(params.order_item_ids),
+      });
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    "set_invoice_number",
+    "Set a custom invoice number for an order item",
+    {
+      order_item_id: z.string().describe("Order item ID"),
+      invoice_number: z.string().describe("Custom invoice number"),
+    },
+    async (params) => {
+      const result = await client.post("sellercenter.order.invoice_number.set", {
+        method: "sellercenter.order.invoice_number.set",
+        order_item_id: params.order_item_id,
+        invoice_number: params.invoice_number,
+      });
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    "get_tracking_info",
+    "Get shipment tracking information for an order item",
+    {
+      order_item_id: z.string().describe("Order item ID to track"),
+    },
+    async (params) => {
+      const result = await client.get("sellercenter.order.tracking.get", {
+        method: "sellercenter.order.tracking.get",
+        order_item_id: params.order_item_id,
+      });
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+}
